@@ -247,11 +247,16 @@ Test execution logs are written to `pytest.log`. You can:
 
 ### Test Coverage
 
-Current test coverage:
-- Core functionality: >90%
-- API interactions: 100%
-- Error handling: >95%
-- File operations: >90%
+Current test coverage is 91% across all files:
+
+| File | Coverage | Details |
+|------|----------|---------|
+| get_congress_members.py | 79% | 182/229 statements |
+| tests/conftest.py | 89% | 25/28 statements |
+| tests/test_congress_members.py | 96% | 468/485 statements |
+| tests/test_live_api.py | 100% | 23/23 statements |
+
+Coverage reports are generated using pytest-cov and can be viewed in the htmlcov directory.
 
 View detailed coverage report:
 ```bash

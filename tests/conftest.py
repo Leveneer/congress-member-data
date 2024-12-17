@@ -7,6 +7,13 @@ import sys
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+def pytest_configure(config):
+    """Register custom markers."""
+    config.addinivalue_line("markers", "unit: mark test as a unit test")
+    config.addinivalue_line("markers", "api: mark test as an API test")
+    config.addinivalue_line("markers", "integration: mark test as an integration test")
+    config.addinivalue_line("markers", "live: mark test as requiring live API access")
+
 def pytest_addoption(parser):
     parser.addoption(
         "--clean-logs",
