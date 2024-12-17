@@ -202,14 +202,6 @@ The script handles common errors including:
 
 Error messages are written to stderr with appropriate exit codes.
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 ## Testing
 
 ### Test Categories
@@ -240,31 +232,13 @@ pytest tests/ -v -s -m unit --clean-logs     # Unit tests only
 - `tests/.coveragerc`: Coverage reporting configuration
 - `.env.test`: Test environment variables
 
-### Coverage Reports
-```bash
-# Generate coverage report
-pytest --cov=. --cov-report=html
-
-# View report
-open coverage_html/index.html  # macOS
-xdg-open coverage_html/index.html  # Linux
-```
-
 ### Test Logs
 Test execution logs are written to `pytest.log`. You can:
 - View existing logs to debug test behavior
 - Clean logs before running tests with `--clean-logs`
 - Configure logging levels in `pytest.ini`
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Test Coverage
+### Test Coverage
 
 Current test coverage:
 - Core functionality: >90%
@@ -278,3 +252,11 @@ View detailed coverage report:
 pytest --cov=. --cov-report=html
 open coverage_html/index.html
 ```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
