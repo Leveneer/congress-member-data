@@ -91,7 +91,7 @@ def main():
         print("Running coverage report...")
         import subprocess
         result = subprocess.run(
-            ['pytest', '--cov=get_congress_members', '--cov=conftest', 
+            ['pytest', '--cov=get_congress_members', 
              '--cov-report=term-missing'],
             capture_output=True,
             text=True
