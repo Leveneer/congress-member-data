@@ -1,9 +1,9 @@
 name: Update Coverage Stats
 
 on:
-  # Runs on push to main/master
+  # Runs on push to branches
   push:
-    branches: [ main, experimental ]
+    branches: [ main, master, experimental ]
   # Runs on merged PRs
   pull_request:
     types: [closed]
@@ -40,9 +40,11 @@ jobs:
         python scripts/update_coverage.py
 
     - name: Commit changes
+      env:
+        GITHUB_TOKEN: ${{ secrets.COVERAGE_TOKEN }}
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git add README.md
-        git diff --quiet && git diff --staged --quiet || git commit -m "docs: update test coverage stats [skip ci]"
-        git push 
+        git diff --quiet && git diff --staged --quiet || (git commit -m "docs: update test coverage stats [skip ci]" && git push https://${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git HEAD:${GITHUB_REF#refs/heads/})
+        git push
