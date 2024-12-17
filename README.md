@@ -265,11 +265,12 @@ Test execution logs are written to `pytest.log`. You can:
 
 ### Test Coverage
 
-Current test coverage is 81% across all files:
+Current test coverage is 86% across all files:
 
 | File | Coverage | Details |
 |------|----------|----------|
-| get_congress_members.py | 81% | 183/227 statements |
+| get_congress_members.py | 86% | 197/230 statements |
+
 
 
 
