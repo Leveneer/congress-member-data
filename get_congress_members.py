@@ -261,10 +261,6 @@ def fetch_congress_members(
 
 def write_to_csv(members: List[Dict], output_file: str, stats: Dict[str, int]) -> None:
     """Write member data to CSV file."""
-    if not members:
-        print("No members found to export", file=sys.stderr)
-        return
-
     output_path = Path(output_file)
     
     # If path is absolute and outside results, raise error
@@ -281,10 +277,11 @@ def write_to_csv(members: List[Dict], output_file: str, stats: Dict[str, int]) -
         with open(final_path, 'w', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=FIELDS, extrasaction='ignore')
             writer.writeheader()
-            writer.writerows(members)
+            if members:  # Only write rows if we have data
+                writer.writerows(members)
             
         print(f"Successfully exported {stats['total']} members to {final_path}")
-    except IOError as e:
+    except (IOError, csv.Error) as e:
         raise IOError(f"Error writing to {final_path}: {e}")
 
 def calculate_congress_number(date_obj: date = None) -> int:

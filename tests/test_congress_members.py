@@ -974,6 +974,90 @@ class TestFileOperations:
                 write_to_csv([{"bioguideId": "test"}], "test.csv", {"total": 1})
             assert expected_msg in str(exc_info.value).lower()
 
+    def test_file_permission_error(self, monkeypatch, capsys):
+        """Test handling of file permission errors."""
+        from get_congress_members import write_to_csv
+        
+        def mock_open(*args, **kwargs):
+            raise PermissionError("Permission denied")
+            
+        monkeypatch.setattr('builtins.open', mock_open)
+        
+        with pytest.raises(IOError) as exc_info:
+            write_to_csv([{"bioguideId": "test"}], "test.csv", {"total": 1})
+        
+        assert "permission denied" in str(exc_info.value).lower()
+
+    def test_file_io_error(self, monkeypatch, capsys):
+        """Test handling of general IO errors."""
+        from get_congress_members import write_to_csv
+        
+        def mock_open(*args, **kwargs):
+            raise IOError("Disk full")
+            
+        monkeypatch.setattr('builtins.open', mock_open)
+        
+        with pytest.raises(IOError) as exc_info:
+            write_to_csv([{"bioguideId": "test"}], "test.csv", {"total": 1})
+        
+        assert "disk full" in str(exc_info.value).lower()
+
+    def test_csv_write_error(self, monkeypatch, setup_results_dir):
+        """Test handling of CSV writing errors."""
+        from get_congress_members import write_to_csv
+        import csv
+        
+        class MockFile:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                pass
+            def write(self, *args):
+                pass
+        
+        class MockDictWriter:
+            def __init__(self, *args, **kwargs):
+                pass
+            def writeheader(self):
+                raise csv.Error("CSV write error")
+            def writerows(self, rows):
+                raise csv.Error("CSV write error")
+        
+        monkeypatch.setattr('builtins.open', lambda *args, **kwargs: MockFile())
+        monkeypatch.setattr(csv, 'DictWriter', lambda *args, **kwargs: MockDictWriter())
+        
+        with pytest.raises(IOError) as exc_info:
+            write_to_csv([{"bioguideId": "test"}], "test_csv_error.csv", {"total": 1})
+        
+        assert "csv write error" in str(exc_info.value).lower()
+
+    def test_invalid_path(self, capsys):
+        """Test handling of invalid file paths."""
+        from get_congress_members import write_to_csv
+        
+        with pytest.raises(IOError) as exc_info:
+            write_to_csv([{"bioguideId": "test"}], "/nonexistent/dir/test.csv", {"total": 1})
+        
+        assert "path" in str(exc_info.value).lower()
+
+    def test_empty_data(self, setup_results_dir):
+        """Test handling of empty data sets."""
+        from get_congress_members import write_to_csv
+        from pathlib import Path
+        import os
+        
+        # Create results directory with write permissions
+        os.makedirs('results', mode=0o755, exist_ok=True)
+        
+        output_file = "test_empty.csv"
+        write_to_csv([], output_file, {"total": 0})
+        
+        result_path = Path('results') / output_file
+        assert result_path.exists(), f"File not found at {result_path}"
+        with open(result_path) as f:
+            content = f.read()
+            assert "bioguideId" in content  # Header should still be written
+
 @pytest.mark.integration
 class TestCLIBehavior:
     """Test command-line interface behavior."""
