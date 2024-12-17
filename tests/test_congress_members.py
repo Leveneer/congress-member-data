@@ -40,13 +40,14 @@ import requests
 from get_congress_members import (
     calculate_congress_number,
     normalize_chamber,
-    generate_output_filename,
     get_api_key,
-    get_current_chamber,
     get_congress_members,
+    generate_output_filename,
+    get_current_chamber,
     write_to_csv,
     format_distribution_message,
-    fetch_congress_members
+    fetch_congress_members,
+    main
 )
 import logging
 import time
@@ -1066,85 +1067,47 @@ class TestCLIBehavior:
         """Test handling of mutually exclusive arguments."""
         logger.debug("Testing mutually exclusive arguments")
         
-        import sys
-        from unittest.mock import patch
+        with pytest.raises(SystemExit) as exc_info:
+            main(['--congress', '118', '--which', '2023'])
         
-        try:
-            logger.debug("Attempting to import main function...")
-            from get_congress_members import main
-            logger.debug("Successfully imported main function")
-        except ImportError as e:
-            logger.error(f"Failed to import main function: {e}")
-            raise
-        
-        test_args = ['script.py', '--congress', '118', '--which', '2023']
-        logger.debug(f"Testing with arguments: {test_args}")
-        
-        with patch.object(sys, 'argv', test_args):
-            try:
-                logger.debug("Executing main function...")
-                main()
-                logger.error("Main executed without raising expected error!")
-                pytest.fail("Expected argument error but none was raised")
-            except SystemExit as e:
-                captured = capsys.readouterr()
-                logger.debug(f"SystemExit caught with code: {e.code}")
-                logger.debug(f"Captured stderr: {captured.err}")
-                if "not allowed with argument" not in captured.err.lower():
-                    logger.error(f"Unexpected error message: {captured.err}")
-                    pytest.fail(f"Expected 'not allowed with argument' in error message, got: {captured.err}")
-            except Exception as e:
-                logger.error(f"Caught unexpected error type: {type(e).__name__}")
-                logger.error(f"Error message: {str(e)}")
-                raise
+        captured = capsys.readouterr()
+        # Verify argparse error message for mutually exclusive arguments
+        assert "argument --which: not allowed with argument --congress" in captured.err
+        # Don't check exit code since argparse handles it differently
 
     def test_help_text(self, capsys):
         """Test help text output."""
         logger.debug("Testing help text display")
         
         with pytest.raises(SystemExit):
-            import sys
-            from unittest.mock import patch
-            
-            test_args = ['script.py', '--help']
-            with patch.object(sys, 'argv', test_args):
-                from get_congress_members import main
-                main()
+            main(['--help'])
         
         captured = capsys.readouterr()
         help_text = captured.out
         logger.info(f"Help text output:\n{help_text}")
         
         # Verify key information is present
-        assert "congress number" in help_text.lower()
+        assert "get-congress-members --congress" in help_text
         assert "--state" in help_text
         assert "--chamber" in help_text
-        assert "script.py --congress" in help_text  # Check for example command
-        assert "Examples:" in help_text  # Verify examples section exists
-        assert "Note: Congress sessions begin" in help_text  # Verify epilog
+        assert "Examples:" in help_text
+        assert "Note: Congress sessions begin" in help_text
 
     def test_invalid_year_input(self, capsys):
         """Test handling of invalid year inputs."""
-        import sys
-        from unittest.mock import patch
-        from get_congress_members import main
-        
         test_cases = [
-            ("1788", "must be between 1789"),  # Before first Congress
-            ("2525", "must be between 1789"),  # Far future
-            ("abc", "invalid int value"),      # Non-numeric
-            ("-1", "must be between 1789")     # Negative
+            ("1788", "must be between 1789"),
+            ("2525", "must be between 1789"),
+            ("abc", "invalid int value"),
+            ("-1", "must be between 1789")
         ]
         for year, expected_msg in test_cases:
             logger.debug(f"Testing invalid year: {year}")
-            with patch.object(sys, 'argv', ['script.py', '--which', year]):
-                try:
-                    main()
-                except SystemExit:
-                    pass
-                captured = capsys.readouterr()
-                logger.info(f"Error output for year {year}: {captured.err}")
-                assert expected_msg.lower() in captured.err.lower()
+            with pytest.raises(SystemExit):
+                main(['--which', year])  # Simplified test case
+            captured = capsys.readouterr()
+            logger.info(f"Error output for year {year}: {captured.err}")
+            assert expected_msg.lower() in captured.err.lower()
 
     @pytest.mark.parametrize("test_case", [
         (str(date.today().year + 2), "must be between 1789"),  # Future year
@@ -1200,3 +1163,51 @@ def setup_results_dir():
     # Clean up test files after tests
     for file in results_dir.glob('test_*.csv'):
         file.unlink()
+
+def test_default_congress_calculation():
+    """Test that calculate_congress_number returns the correct current Congress"""
+    current_year = date.today().year
+    congress = calculate_congress_number()
+    
+    # Verify it's a reasonable number (between 117 and 119 as of 2023-2024)
+    assert 117 <= congress <= 119, f"Current Congress {congress} outside expected range"
+    
+    # Verify it matches the expected calculation
+    expected_congress = 1 + ((current_year - 1789) // 2)
+    if current_year % 2 == 0:
+        expected_congress = 1 + ((current_year - 1 - 1789) // 2)
+    
+    assert congress == expected_congress
+
+@pytest.mark.api
+def test_main_with_default_congress(capsys, mock_api_response):
+    """Test main() works with default Congress number"""
+    # Mock the API response for the current Congress
+    current_congress = calculate_congress_number()
+    mock_api_response(current_congress)
+    
+    # Run main with minimal arguments
+    with pytest.raises(SystemExit) as exc_info:
+        main(['--api-key', 'test_key'])
+    
+    assert exc_info.value.code == 0  # Should exit successfully
+    
+    captured = capsys.readouterr()
+    assert "Error" not in captured.err
+    assert f"members_{current_congress}" in captured.out
+
+@pytest.mark.api
+def test_get_congress_members_with_default_congress(mock_api_response):
+    """Test get_congress_members works with current Congress"""
+    from get_congress_members import get_congress_members
+    
+    current_congress = calculate_congress_number()
+    mock_api_response(current_congress)
+    
+    members, stats = get_congress_members(
+        api_key="test_key",
+        congress=current_congress
+    )
+    
+    assert len(members) > 0
+    assert stats['total'] > 0

@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "congress-member-data"
+version = "1.0.0"
+authors = [
+  { name="Ben Rossi", email="ben@leveneer.com" },
+]
+description = "A tool for retrieving and analyzing congressional member data from the Congress.gov API"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "python-dotenv>=0.19.0",
+    "requests>=2.25.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/Leveneer/congress-member-data"
+"Bug Tracker" = "https://github.com/Leveneer/congress-member-data/issues"
+
+[project.scripts]
+get-congress-members = "get_congress_members:main"
+
+[tool.hatch.build]
+include = [
+    "get_congress_members.py",
+    "README.md",
+]

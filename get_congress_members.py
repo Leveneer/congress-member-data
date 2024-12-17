@@ -98,6 +98,19 @@ STATE_NAMES = {
 # Constants
 FIELDS = ['bioguideId', 'name', 'party', 'state', 'district', 'chamber', 'url']
 
+__all__ = [
+    'get_congress_members',
+    'calculate_congress_number',
+    'normalize_chamber',
+    'get_api_key',
+    'generate_output_filename',
+    'get_current_chamber',
+    'write_to_csv',
+    'format_distribution_message',
+    'fetch_congress_members',
+    'main'
+]
+
 def get_api_key(cmd_line_key: Optional[str] = None) -> Optional[str]:
     """Get API key from command line argument, .env file, or environment variable."""
     if cmd_line_key:
@@ -513,8 +526,15 @@ def format_ordinal(n: int) -> str:
         suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
     return f"{n}{suffix}"
 
-def main():
+def main(args=None):
+    """
+    Main entry point for the script.
+    
+    Args:
+        args: Optional list of command line arguments. If None, sys.argv[1:] is used.
+    """
     parser = argparse.ArgumentParser(
+        prog='get-congress-members',
         description="""Fetch congressional member data.
 
 Examples:
@@ -527,12 +547,14 @@ Note: Congress sessions begin in January of odd-numbered years.
 For more information, visit: https://api.congress.gov/"""
     )
     
+    current_congress = calculate_congress_number()
+    
     # Create mutually exclusive group
-    group = parser.add_mutually_exclusive_group(required=False)
+    group = parser.add_mutually_exclusive_group()
     group.add_argument(
         '--congress',
         type=int,
-        help="Congress number (e.g., 118)"
+        help=f"Congress number (defaults to current: {current_congress})"
     )
     group.add_argument(
         '--which',
@@ -547,7 +569,11 @@ For more information, visit: https://api.congress.gov/"""
     parser.add_argument('--api-key', help="Congress.gov API key")
     parser.add_argument('--debug', action='store_true', help="Enable debug output")
     
-    args = parser.parse_args()
+    args = parser.parse_args(args)
+    
+    # Set default congress after parsing
+    if args.congress is None and args.which is None:
+        args.congress = current_congress
     
     # Handle year lookup if --which is used
     if args.which:
@@ -559,7 +585,7 @@ For more information, visit: https://api.congress.gov/"""
             
         print(f"\nCongress in session during {year}:")
         print(f"  {format_congress_info(year)}")
-        return
+        sys.exit(0)  # Exit instead of return
     
     # Normalize chamber input
     if args.chamber:
@@ -586,18 +612,15 @@ For more information, visit: https://api.congress.gov/"""
             debug=args.debug
         )
         
-        if args.stream:
-            # When used as a module, return the data directly
-            return members, stats
-        else:
-            # Generate default output filename if not specified
-            if not args.output:
-                args.output = generate_output_filename(args.congress, args.chamber, args.state)
-            write_to_csv(members, args.output, stats)
+        # Generate default output filename if not specified
+        if not args.output:
+            args.output = generate_output_filename(args.congress, args.chamber, args.state)
+        write_to_csv(members, args.output, stats)
+        sys.exit(0)  # Exit successfully
 
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
+        sys.exit(1)  # Exit with error
 
 if __name__ == "__main__":
     main()
