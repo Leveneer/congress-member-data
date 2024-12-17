@@ -45,7 +45,8 @@ from get_congress_members import (
     get_current_chamber,
     get_congress_members,
     write_to_csv,
-    format_distribution_message
+    format_distribution_message,
+    fetch_congress_members
 )
 import logging
 import time
@@ -226,6 +227,92 @@ class TestCongressTransitions:
         from get_congress_members import format_congress_info
         result = format_congress_info(year)
         assert contains_text in result
+
+@pytest.mark.unit
+class TestErrorHandling:
+    def test_api_connection_timeout(self, monkeypatch, capsys):
+        """Test handling of API timeout errors."""
+        from get_congress_members import fetch_congress_members
+        
+        def mock_get(*args, **kwargs):
+            raise requests.exceptions.Timeout("Connection timed out")
+        
+        monkeypatch.setattr(requests, 'get', mock_get)
+        
+        with pytest.raises(requests.exceptions.RequestException) as exc_info:
+            fetch_congress_members(api_key="dummy_key", congress=118)
+        
+        captured = capsys.readouterr()
+        assert "Error fetching data from Congress.gov API" in captured.err
+
+    def test_api_connection_error(self, monkeypatch, capsys):
+        """Test handling of connection errors."""
+        from get_congress_members import fetch_congress_members
+        
+        def mock_get(*args, **kwargs):
+            raise requests.exceptions.ConnectionError("Failed to establish connection")
+            
+        monkeypatch.setattr(requests, 'get', mock_get)
+        
+        with pytest.raises(requests.exceptions.RequestException) as exc_info:
+            fetch_congress_members(api_key="dummy_key", congress=118)
+        
+        captured = capsys.readouterr()
+        assert "Error fetching data from Congress.gov API" in captured.err
+
+    def test_api_http_error(self, monkeypatch, capsys):
+        """Test handling of HTTP errors."""
+        from get_congress_members import fetch_congress_members
+        
+        class MockResponse:
+            def raise_for_status(self):
+                raise requests.exceptions.HTTPError("403 Client Error: Forbidden")
+        
+        def mock_get(*args, **kwargs):
+            return MockResponse()
+            
+        monkeypatch.setattr(requests, 'get', mock_get)
+        
+        with pytest.raises(requests.exceptions.RequestException) as exc_info:
+            fetch_congress_members(api_key="dummy_key", congress=118)
+        
+        captured = capsys.readouterr()
+        assert "Error fetching data from Congress.gov API" in captured.err
+
+    def test_api_invalid_json(self, monkeypatch, capsys):
+        """Test handling of invalid JSON responses."""
+        from get_congress_members import fetch_congress_members
+        
+        class MockResponse:
+            def raise_for_status(self):
+                pass
+            def json(self):
+                raise ValueError("Invalid JSON response")
+            
+        def mock_get(*args, **kwargs):
+            return MockResponse()
+            
+        monkeypatch.setattr(requests, 'get', mock_get)
+        
+        with pytest.raises(ValueError) as exc_info:
+            fetch_congress_members(api_key="dummy_key", congress=118)
+        
+        assert "Invalid JSON response" in str(exc_info.value)
+
+    def test_debug_output(self, monkeypatch, capsys):
+        """Test debug output in error conditions."""
+        from get_congress_members import fetch_congress_members
+        
+        def mock_get(*args, **kwargs):
+            raise requests.exceptions.RequestException("Test error")
+        
+        monkeypatch.setattr(requests, 'get', mock_get)
+        
+        with pytest.raises(requests.exceptions.RequestException):
+            fetch_congress_members(api_key="dummy_key", congress=118, debug=True)
+        
+        captured = capsys.readouterr()
+        assert "DEBUG:" in captured.out
 
 # API Tests
 @pytest.mark.api
