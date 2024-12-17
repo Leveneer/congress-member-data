@@ -3,7 +3,7 @@ name: Update Coverage Stats
 on:
   # Runs on push to main/master
   push:
-    branches: [ main, master ]
+    branches: [ main, experimental ]
   # Runs on merged PRs
   pull_request:
     types: [closed]
@@ -31,7 +31,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install -r requirements-dev.txt
+        if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+        # Ensure test dependencies are installed
+        pip install pytest pytest-cov coverage
 
     - name: Run tests and update coverage
       run: |
