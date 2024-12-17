@@ -2,6 +2,10 @@ import pytest
 import os
 import logging
 from pathlib import Path
+import sys
+
+# Add the parent directory to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def pytest_addoption(parser):
     parser.addoption(

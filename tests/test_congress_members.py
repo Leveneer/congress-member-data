@@ -201,6 +201,32 @@ class TestDataValidation:
         logger.info(f"Future Congress calculation: {future_congress}")
         assert future_congress > current
 
+@pytest.mark.unit
+class TestCongressTransitions:
+    @pytest.mark.parametrize("congress,expected", [
+        (1, ("March", 3)),    # First Congress
+        (72, ("March", 3)),   # Last March transition
+        (73, ("January", 1)), # First January transition
+        (118, ("January", 1)) # Current Congress
+    ])
+    def test_congress_transition_month(self, congress, expected):
+        """Test transition month determination for different Congress numbers."""
+        from get_congress_members import get_congress_transition_month
+        assert get_congress_transition_month(congress) == expected
+
+    @pytest.mark.parametrize("year,contains_text", [
+        (1800, "1799-1801"),           # Non-transition historical
+        (1801, "March 1801"),          # Historical transition
+        (1933, "March 1933"),          # Amendment year
+        (2022, "2021-2023"),           # Non-transition modern
+        (2023, "January 2023")         # Modern transition
+    ])
+    def test_congress_info_formatting(self, year, contains_text):
+        """Test Congress info formatting for various years."""
+        from get_congress_members import format_congress_info
+        result = format_congress_info(year)
+        assert contains_text in result
+
 # API Tests
 @pytest.mark.api
 class TestAPIInteractions:
@@ -972,6 +998,27 @@ class TestCLIBehavior:
             captured = capsys.readouterr()
             logger.info(f"Error output: {captured.err}")
             assert expected_error.lower() in captured.err.lower() or captured.err == ""  # Handle both error and valid cases
+
+    @pytest.mark.parametrize("year,expected_text", [
+        (2014, "113th Congress (2013-2015)"),  # Non-transition year
+        (2023, "117th Congress (2021-January 2023) & 118th Congress (January 2023-2025)"),  # Modern transition
+        (1801, "6th Congress (1799-March 1801) & 7th Congress (March 1801-1803)"),  # Historical transition
+        (1933, "72nd Congress (1931-March 1933) & 73rd Congress (January 1933-1935)")  # Amendment year
+    ])
+    def test_which_year_output(self, capsys, year, expected_text):
+        """Test output formatting for different years, including historical transitions."""
+        import sys
+        from unittest.mock import patch
+        from get_congress_members import main
+        
+        with patch.object(sys, 'argv', ['script.py', '--which', str(year)]):
+            try:
+                main()
+            except SystemExit:
+                pass
+            captured = capsys.readouterr()
+            expected_output = f"Congress in session during {year}:\n  {expected_text}"
+            assert expected_output in captured.out
 
 @pytest.fixture(autouse=True)
 def setup_results_dir():

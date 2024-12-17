@@ -321,12 +321,10 @@ def get_congress_years(congress: int) -> tuple[int, int]:
     Returns:
         Tuple of (start_year, end_year)
     """
-    base_year = 1789
-    base_congress = 1
-    
-    # Calculate the start year
-    start_year = base_year + ((congress - base_congress) * 2)
-    return (start_year, start_year + 2)
+    # Each Congress starts in odd years
+    start_year = 1789 + ((congress - 1) * 2)
+    end_year = start_year + 2
+    return (start_year, end_year)
 
 def generate_output_filename(congress: int, chamber: Optional[str] = None, state: Optional[str] = None) -> str:
     """
@@ -446,6 +444,78 @@ def format_distribution_message(stats: Dict[str, int]) -> str:
         parts.append(f"{stats['redistricted']} redistricted")
     return f"including {', '.join(parts)}" if parts else ""
 
+def get_congress_transition_month(congress: int, year: int = None) -> tuple[str, int]:
+    """
+    Get the transition month for a given Congress.
+    
+    Historical Context:
+    - 1st-72nd Congress (1789-1933): Sessions began on March 4th
+    - 73rd Congress onward (1933-present): Sessions begin on January 3rd
+    
+    Special case for 1933:
+    The 20th Amendment changed Congressional session dates from March 4th to January 3rd.
+    The transition created a unique sequence:
+    - 72nd Congress served through March 1933 (old system)
+    - 73rd Congress began March 1933 (old system)
+    - 73rd Congress's first regular session delayed until January 1934
+    - All subsequent Congresses would begin January 3rd (new system)
+    
+    This unusual transition period was specifically outlined in the amendment to
+    ensure continuity of government while changing the Congressional calendar.
+    The delayed start of the 73rd Congress's regular session helped bridge the gap
+    between the old March-to-March cycle and the new January-to-January cycle.
+    
+    For a detailed analysis of the amendment and its historical context, see:
+    https://constitutioncenter.org/the-constitution/amendments/amendment-xx/interpretations/153
+    
+    Args:
+        congress: Congress number
+        year: Optional year for special case handling
+        
+    Returns:
+        Tuple of (month_name, month_number)
+    """
+    # Special case for 1933 transition
+    if year == 1933 and congress == 72:
+        return ("March", 3)
+    elif year == 1933 and congress == 73:
+        return ("January", 1)
+    
+    if congress < 73:  # Before 20th Amendment
+        return ("March", 3)
+    return ("January", 1)
+
+def format_congress_info(year: int) -> str:
+    """
+    Get formatted Congress information for a specific year.
+    """
+    if year % 2 == 1:
+        prev_congress = calculate_congress_number(date(year, 1, 1))
+        curr_congress = prev_congress + 1
+        
+        prev_years = get_congress_years(prev_congress)
+        curr_years = get_congress_years(curr_congress)
+        
+        prev_transition_month, _ = get_congress_transition_month(prev_congress, year)
+        curr_transition_month, _ = get_congress_transition_month(curr_congress, year)
+        
+        return (f"{format_ordinal(prev_congress)} Congress ({prev_years[0]}-{prev_transition_month} {year}) & "
+                f"{format_ordinal(curr_congress)} Congress ({curr_transition_month} {year}-{curr_years[1]})")
+    else:
+        congress = calculate_congress_number(date(year, 7, 1))
+        years = get_congress_years(congress)
+        return f"{format_ordinal(congress)} Congress ({years[0]}-{years[1]})"
+
+def format_ordinal(n: int) -> str:
+    """
+    Format a number as an ordinal (1st, 2nd, 3rd, etc.).
+    """
+    if 10 <= n % 100 <= 20:
+        suffix = 'th'
+    else:
+        suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
+    return f"{n}{suffix}"
+
 def main():
     parser = argparse.ArgumentParser(
         description="""Fetch congressional member data.
@@ -485,18 +555,13 @@ For more information, visit: https://api.congress.gov/"""
     # Handle year lookup if --which is used
     if args.which:
         year = args.which
-        # Add year validation
         if not (1789 <= year <= date.today().year + 1):
             print(f"Error: Invalid year {year}. Must be between 1789 and {date.today().year + 1}",
                   file=sys.stderr)
             sys.exit(1)
-        if not isinstance(year, int):
-            print(f"Error: Invalid year format. Must be a number.", file=sys.stderr)
-            sys.exit(1)
             
-        congress = calculate_congress_number(date(year, 1, 3))
         print(f"\nCongress in session during {year}:")
-        print(f"  {congress}th Congress ({year-1 if year % 2 == 0 else year}-{year if year % 2 == 0 else year+1})")
+        print(f"  {format_congress_info(year)}")
         return
     
     # Normalize chamber input

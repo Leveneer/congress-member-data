@@ -150,16 +150,23 @@ Note: `--congress` and `--which` are mutually exclusive.
 
 To find out which Congress was in session during a specific year:
 ```bash
-# Look up Congress for 2014
+# Look up Congress for a non-transition year
 python get_congress_members.py --which 2014
 # Output: Congress in session during 2014:
 #   113th Congress (2013-2015)
 
-# Look up Congress for 2007
-python get_congress_members.py --which 2007
-# Output: Congress in session during 2007:
-#   110th Congress (2007-2009)
+# Look up Congress for a modern transition year
+python get_congress_members.py --which 2023
+# Output: Congress in session during 2023:
+#   117th Congress (2021-January 2023) & 118th Congress (January 2023-2025)
+
+# Look up Congress for a historical transition year
+python get_congress_members.py --which 1801
+# Output: Congress in session during 1801:
+#   6th Congress (1799-March 1801) & 7th Congress (March 1801-1803)
 ```
+
+Note: Congressional sessions historically began in March (1st-72nd Congress, 1789-1933) and now begin in January (73rd Congress onward, 1933-present) due to the 20th Amendment. For transition years (odd-numbered years), the tool shows both Congresses that served during that year.
 
 ## Output
 
