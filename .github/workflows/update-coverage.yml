@@ -47,6 +47,5 @@ jobs:
         git config --local user.name "github-actions[bot]"
         git add README.md
         git diff --quiet && git diff --staged --quiet || (
-          git commit -m "docs: update test coverage stats [skip ci]" && 
-          git push "https://x-access-token:${{ secrets.COVERAGE_TOKEN }}@github.com/${{ github.repository }}" HEAD:${GITHUB_REF#refs/heads/}
+          git commit -m "docs: update test coverage stats [skip ci]" && git push "https://x-access-token:${{ secrets.COVERAGE_TOKEN }}@github.com/${{ github.repository }}"
         )
