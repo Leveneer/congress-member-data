@@ -1,0 +1,34 @@
+# Environment files
+.env
+.env.test
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Testing
+tests/.coverage
+coverage_html/
+tests/.pytest_cache/
+tests/pytest.log
+
+# Virtual Environment
+.venv/
+venv/
+
+# Project specific
+results/
+*.csv
+
+# IDE files
+.vscode/
+.idea/
+
+# Test logs
+tests/test_output.log
+*.log
+
+# Mac
+.DS_Store
