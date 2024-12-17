@@ -42,13 +42,18 @@ Please refer to the [official Congress.gov API documentation](https://github.com
 
 ## Setup
 
-1. Clone this repository:
+1. Install directly from GitHub using pip:
+   ```bash
+   pip install git+ssh://git@github.com/Leveneer/congress-member-data.git
+   ```
+
+   Or clone and install locally:
    ```bash
    git clone https://github.com/Leveneer/congress-member-data.git
    cd congress-member-data
    ```
 
-2. Create and activate a virtual environment:
+2. Create and activate a virtual environment (if installing locally):
    ```bash
    # Create virtual environment
    python -m venv .venv
@@ -60,7 +65,7 @@ Please refer to the [official Congress.gov API documentation](https://github.com
    source .venv/bin/activate
    ```
 
-3. Install required packages:
+3. Install required packages (if installing locally):
    ```bash
    pip install -r requirements.txt
    ```
@@ -77,7 +82,7 @@ Please refer to the [official Congress.gov API documentation](https://github.com
      # On macOS/Linux:
      export CONGRESS_API_KEY=your_api_key_here
      ```
-   - Use the `--api-key` argument when running the script
+   - Use the `--api-key` argument when running the command
 
 ## Usage
 
@@ -86,28 +91,26 @@ Please refer to the [official Congress.gov API documentation](https://github.com
 Basic usage:
 ```bash
 # Get all members from the current Congress (defaults to current Congress)
-python get_congress_members.py
+get-congress-members
 
 # Get members from a specific Congress
-python get_congress_members.py --congress 117  # Previous Congress
+get-congress-members --congress 117  # Previous Congress
 ```
 
 With filters:
 ```bash
 # Get House members from New York (current Congress)
-python get_congress_members.py --state NY --chamber House
+get-congress-members --state NY --chamber House
 
 # Get all Senate members (current Congress)
-python get_congress_members.py --chamber Senate
+get-congress-members --chamber Senate
 
 # Get all members from California (current Congress)
-python get_congress_members.py --state CA
+get-congress-members --state CA
 
 # Get Senate members from Texas in the 117th Congress
-python get_congress_members.py --congress 117 --state TX --chamber Senate
+get-congress-members --congress 117 --state TX --chamber Senate
 ```
-
-Note: The current Congress (118th) is the default. Use `--congress` only when you need data from a different Congress.
 
 ### As a Python Module
 
@@ -132,6 +135,21 @@ print(f"Former members: {stats['former']}")
 print(f"Redistricted: {stats['redistricted']}")
 ```
 
+## API Key Setup
+
+1. Get your API key from [Congress.gov](https://api.congress.gov/sign-up/)
+2. Set up your key (choose one method):
+   ```bash
+   # Environment variable
+   export CONGRESS_API_KEY=your_api_key_here
+
+   # .env file
+   echo "CONGRESS_API_KEY=your_api_key_here" > .env
+
+   # Command line argument
+   get-congress-members --api-key your_api_key_here
+   ```
+
 ## Command Line Arguments
 
 | Argument | Description | Default |
@@ -151,17 +169,17 @@ Note: `--congress` and `--which` are mutually exclusive.
 To find out which Congress was in session during a specific year:
 ```bash
 # Look up Congress for a non-transition year
-python get_congress_members.py --which 2014
+get-congress-members --which 2014
 # Output: Congress in session during 2014:
 #   113th Congress (2013-2015)
 
 # Look up Congress for a modern transition year
-python get_congress_members.py --which 2023
+get-congress-members --which 2023
 # Output: Congress in session during 2023:
 #   117th Congress (2021-January 2023) & 118th Congress (January 2023-2025)
 
 # Look up Congress for a historical transition year
-python get_congress_members.py --which 1801
+get-congress-members --which 1801
 # Output: Congress in session during 1801:
 #   6th Congress (1799-March 1801) & 7th Congress (March 1801-1803)
 ```
