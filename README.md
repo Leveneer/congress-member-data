@@ -53,7 +53,7 @@ Please refer to the [official Congress.gov API documentation](https://github.com
    cd congress-member-data
    ```
 
-2. Create and activate a virtual environment (if installing locally):
+2. Create and activate a virtual environment:
    ```bash
    # Create virtual environment
    python -m venv .venv
@@ -65,7 +65,7 @@ Please refer to the [official Congress.gov API documentation](https://github.com
    source .venv/bin/activate
    ```
 
-3. Install required packages (if installing locally):
+3. Install required packages:
    ```bash
    pip install -r requirements.txt
    ```
@@ -112,6 +112,8 @@ get-congress-members --state CA
 get-congress-members --congress 117 --state TX --chamber Senate
 ```
 
+Note: The current Congress (118th) is the default. Use `--congress` only when you need data from a different Congress.
+
 ### As a Python Module
 
 ```python
@@ -134,21 +136,6 @@ print(f"Total members: {stats['total']}")
 print(f"Former members: {stats['former']}")
 print(f"Redistricted: {stats['redistricted']}")
 ```
-
-## API Key Setup
-
-1. Get your API key from [Congress.gov](https://api.congress.gov/sign-up/)
-2. Set up your key (choose one method):
-   ```bash
-   # Environment variable
-   export CONGRESS_API_KEY=your_api_key_here
-
-   # .env file
-   echo "CONGRESS_API_KEY=your_api_key_here" > .env
-
-   # Command line argument
-   get-congress-members --api-key your_api_key_here
-   ```
 
 ## Command Line Arguments
 
@@ -270,8 +257,6 @@ Current test coverage is 86% across all files:
 | File | Coverage | Details |
 |------|----------|----------|
 | get_congress_members.py | 86% | 197/230 statements |
-
-
 
 
 Coverage reports are generated using pytest-cov and can be viewed in the htmlcov directory.
