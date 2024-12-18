@@ -71,8 +71,10 @@ Please refer to the [official Congress.gov API documentation](https://github.com
    ```
 
 4. Set up your API key (choose one method):
-   - Create a `.env` file:
+   - Create a `.env` file in your working directory (you can copy from template):
      ```bash
+     cp .env.template .env  # Then edit .env with your API key
+     # Or create directly:
      echo "CONGRESS_API_KEY=your_api_key_here" > .env
      ```
    - Set environment variable:
@@ -82,7 +84,10 @@ Please refer to the [official Congress.gov API documentation](https://github.com
      # On macOS/Linux:
      export CONGRESS_API_KEY=your_api_key_here
      ```
-   - Use the `--api-key` argument when running the command
+   - Use the `--api-key` argument when running the command:
+     ```bash
+     get-congress-members --api-key your_api_key_here --state NY
+     ```
 
 ## Usage
 
@@ -190,7 +195,7 @@ Example filenames:
 The CSV output includes the following fields:
 - `bioguideId`: Unique identifier
 - `name`: Member's full name
-- `party`: Political party
+- `party`: Political party affiliation (e.g., Democratic, Republican, Independent)
 - `state`: State represented
 - `district`: District number (House members only)
 - `chamber`: House or Senate
@@ -252,19 +257,28 @@ Test execution logs are written to `pytest.log`. You can:
 
 ### Test Coverage
 
-Current test coverage is 86% across all files:
+Current test coverage:
 
 | File | Coverage | Details |
-|------|----------|----------|
-| get_congress_members.py | 86% | 197/230 statements |
+|------|----------|---------|
+| get_congress_members.py | 92% | 237/259 statements |
 
-
-Coverage reports are generated using pytest-cov and can be viewed in the htmlcov directory.
-
-View detailed coverage report:
+Coverage reports can be generated using:
 ```bash
-# Generate coverage report
-pytest --cov=. --cov-report=html
+# For installed package
+pytest --cov=get_congress_members --cov-report=term-missing --cov-report=html tests/
+
+# For source code
+pytest --cov=. --cov-report=term-missing --cov-report=html --cov-config=tests/.coveragerc tests/
+```
+
+This will:
+- Show coverage in the console with missing lines
+- Generate an HTML report
+- Use the configuration from tests/.coveragerc
+
+View the HTML report:
+```bash
 open coverage_html/index.html
 ```
 

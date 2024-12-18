@@ -1,10 +1,12 @@
 [run]
 source = ..
+branch = True
 omit =
     tests/*
     .venv/*
     setup.py
     */__init__.py
+    */site-packages/*
 
 [report]
 exclude_lines =
@@ -14,6 +16,8 @@ exclude_lines =
     pass
     raise ImportError
     except ImportError:
+    if __name__ == .__main__.:
 
 [html]
 directory = coverage_html
+title = Congress Member Data Coverage Report

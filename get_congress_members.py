@@ -111,28 +111,85 @@ __all__ = [
     'main'
 ]
 
-def get_api_key(cmd_line_key: Optional[str] = None) -> Optional[str]:
-    """Get API key from command line argument, .env file, or environment variable."""
+def get_api_key(cmd_line_key: Optional[str] = None, debug: bool = False) -> Optional[str]:
+    """
+    Get API key from command line argument, .env file, or environment variable.
+    
+    Args:
+        cmd_line_key: Optional API key provided via command line
+        debug: Whether to show debug output
+    """
     if cmd_line_key:
         return cmd_line_key
 
     env_path = Path('.env')
+    if debug:
+        print(f"DEBUG: Looking for .env file at: {env_path.absolute()}")
     if env_path.exists():
+        if debug:
+            print("DEBUG: Found .env file")
         load_dotenv()
+    elif debug:
+        print("DEBUG: No .env file found")
     
-    return os.getenv('CONGRESS_API_KEY')
+    api_key = os.getenv('CONGRESS_API_KEY')
+    if debug:
+        print(f"DEBUG: API key found: {'Yes' if api_key else 'No'}")
+    return api_key
 
-def get_current_chamber(member: Dict) -> str:
+def get_current_chamber(member: Dict, debug: bool = False) -> str:
     """
     Extract the current chamber from a member's terms.
     Normalizes 'House of Representatives' to 'House' for consistency.
     """
     terms = member.get('terms', {}).get('item', [])
+    if debug:
+        print(f"DEBUG: Raw terms: {terms}")
+    
+    if isinstance(terms, dict):  # Handle single term case
+        terms = [terms]
+        if debug:
+            print(f"DEBUG: Converted single term to list: {terms}")
+    
     if terms:
         chamber = terms[-1].get('chamber', '')
+        if debug:
+            print(f"DEBUG: Found chamber: {chamber}")
         # Normalize chamber name
         return 'House' if chamber == 'House of Representatives' else chamber
+    
+    if debug:
+        print("DEBUG: No terms found")
     return ''
+
+def format_member_data(member: Dict, debug: bool = False) -> Dict:
+    """Extract and format member data from API response."""
+    if debug:
+        print(f"DEBUG: Raw member data: {member}")
+    
+    # Handle empty terms list safely
+    terms = member.get('terms', {}).get('item', [])
+    if isinstance(terms, dict):
+        terms = [terms]
+    
+    # Get latest term's party safely
+    latest_term_party = terms[-1].get('party') if terms else None
+    
+    party = (
+        member.get('partyName') or
+        member.get('party') or
+        latest_term_party
+    )
+    
+    return {
+        'bioguideId': member.get('bioguideId'),
+        'name': member.get('name'),
+        'party': party,
+        'state': member.get('state'),
+        'district': member.get('district'),
+        'chamber': get_current_chamber(member),
+        'url': member.get('url')
+    }
 
 def fetch_congress_members(
     api_key: str,
@@ -266,7 +323,10 @@ def fetch_congress_members(
             if len(districts) > 1:
                 stats['redistricted'] += 1
         
-        return all_members, stats
+        # Transform member data before returning
+        formatted_members = [format_member_data(member, debug=debug) for member in all_members]
+        
+        return formatted_members, stats
 
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data from Congress.gov API: {e}", file=sys.stderr)
@@ -597,7 +657,7 @@ For more information, visit: https://api.congress.gov/"""
         args.chamber = normalized_chamber
 
     # Get API key
-    api_key = get_api_key(args.api_key)
+    api_key = get_api_key(args.api_key, debug=args.debug)
     if not api_key:
         print("Error: API key must be provided via --api-key argument, .env file, "
               "or CONGRESS_API_KEY environment variable", file=sys.stderr)

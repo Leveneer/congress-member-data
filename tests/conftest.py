@@ -66,9 +66,6 @@ def mock_api_response(monkeypatch):
     def _mock_response(congress_number):
         def mock_get(*args, **kwargs):
             class MockResponse:
-                def __init__(self):
-                    self.status_code = 200
-                
                 def json(self):
                     return {
                         "members": [
@@ -77,18 +74,19 @@ def mock_api_response(monkeypatch):
                                 "name": "Test Member",
                                 "state": "NY",
                                 "party": "D",
-                                "chamber": "House",
+                                "terms": {
+                                    "item": {  # Single term as dict
+                                        "chamber": "Senate",
+                                        "congress": str(congress_number)
+                                    }
+                                },
                                 "url": "https://api.congress.gov/v3/member/1"
                             }
                         ],
                         "pagination": {"count": 1, "next": None}
                     }
-                
                 def raise_for_status(self):
                     pass
-            
             return MockResponse()
-        
         monkeypatch.setattr("requests.get", mock_get)
-    
     return _mock_response

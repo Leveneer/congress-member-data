@@ -9,6 +9,7 @@ import os
 from datetime import date
 from dotenv import load_dotenv
 import logging
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,18 @@ load_dotenv()
 @pytest.mark.live
 @pytest.mark.skipif(not os.getenv('CONGRESS_API_KEY'), reason="No API key available")
 class TestLiveAPI:
+    @pytest.fixture(autouse=True)
+    def check_api_available(self):
+        """Skip live tests if API is unavailable."""
+        try:
+            response = requests.get(
+                "https://api.congress.gov/v3/member/congress/118",
+                params={'api_key': os.getenv('CONGRESS_API_KEY'), 'limit': 1}
+            )
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            pytest.skip(f"Congress.gov API unavailable: {e}")
+
     def test_current_congress_members(self):
         """Test retrieval of current Congress members."""
         from get_congress_members import get_congress_members
